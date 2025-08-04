@@ -57,4 +57,7 @@ if __name__ == "__main__":
     # Tạo database cho service products
     create_database("productsdb")
     
+    # Create authdb database
+    create_database("authdb")
+    
     print("✨ Hoàn thành!")
