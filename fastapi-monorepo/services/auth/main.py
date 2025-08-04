@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from db import SessionLocal
+from libs.db.session import SessionLocal
 from sqlalchemy import text
-from app.routers import user
+from .app.routers import user
 import sys 
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

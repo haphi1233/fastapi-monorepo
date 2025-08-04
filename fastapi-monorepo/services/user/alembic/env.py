@@ -1,17 +1,31 @@
 from logging.config import fileConfig
 import sys
 import os
+from dotenv import load_dotenv
+
+# Thêm đường dẫn tới thư mục gốc của monorepo
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
+# Load environment variables
+load_dotenv()
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+
+from alembic import context
 from libs.db.base import Base
 # Import models để Alembic có thể phát hiện chúng
-from app.models.models import User
-from alembic import context
-
+from services.user.app.models.user import User
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Set environment variables in config for interpolation
+config.set_main_option('DB_USERNAME', os.getenv('DB_USERNAME', 'postgres'))
+config.set_main_option('DB_PASSWORD', os.getenv('DB_PASSWORD', '123456'))
+config.set_main_option('DB_HOST', os.getenv('DB_HOST', 'localhost'))
+config.set_main_option('DB_PORT', os.getenv('DB_PORT', '5433'))
+config.set_main_option('DB_NAME', os.getenv('DB_NAME', 'userdb'))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -28,7 +42,6 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

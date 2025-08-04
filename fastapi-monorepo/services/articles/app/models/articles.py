@@ -1,4 +1,4 @@
-from db.base import Base
+from libs.db.base import Base
 from sqlalchemy import Column, Integer, String, Boolean, Float
 
 class Article(Base):

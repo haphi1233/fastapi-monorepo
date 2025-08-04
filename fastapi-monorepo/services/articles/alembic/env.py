@@ -1,14 +1,17 @@
 from logging.config import fileConfig
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+
+import sys
+import os
+# Thêm đường dẫn tới thư mục gốc của monorepo
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
+from alembic import context
 from libs.db.base import Base
 # Import models để Alembic có thể phát hiện chúng
-from app.models.models import User
-from alembic import context
-
+from app.models.articles import Article
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

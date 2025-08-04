@@ -1,16 +1,17 @@
-from db.session import get_db
-from schemas.article import ArticleBase
-from models.articles import Article
+from libs.db.session import get_db
+from ..schemas.article import ArticleRequest, ArticleResponse
+from ..models.articles import Article
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
-@router.post("/articles", response_model=Article)
-def create_articles(db= Depends(get_db), data = ArticleBase):
+@router.post("/articles", response_model=ArticleResponse)
+def create_articles(article: ArticleRequest, db: Session = Depends(get_db)):
     new_article = Article(
-        article_title=data.article_title,
-        article_content=data.article_content,
-        is_evaluation=data.is_evaluation,
+        article_title=article.article_title,
+        article_content=article.article_content,
+        is_evaluation=article.is_evaluation,
     )
     db.add(new_article)
     db.commit()
