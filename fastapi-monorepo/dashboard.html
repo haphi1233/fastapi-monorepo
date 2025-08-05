@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Monorepo - Service Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+        }
+
+        .status-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #3498db;
+            transition: transform 0.3s ease;
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .status-card.gateway {
+            border-left-color: #e74c3c;
+        }
+
+        .status-card.auth {
+            border-left-color: #f39c12;
+        }
+
+        .status-card.products {
+            border-left-color: #27ae60;
+        }
+
+        .status-card.articles {
+            border-left-color: #9b59b6;
+        }
+
+        .status-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-healthy {
+            background-color: #27ae60;
+        }
+
+        .status-unhealthy {
+            background-color: #e74c3c;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .service-info {
+            margin-bottom: 15px;
+        }
+
+        .service-info p {
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+
+        .service-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .service-link {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .service-link:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .service-link.docs {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+
+        .service-link.health {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+
+        .routes-section {
+            margin-top: 40px;
+        }
+
+        .routes-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .routes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .route-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .route-card h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .route-list {
+            list-style: none;
+        }
+
+        .route-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .route-list li:last-child {
+            border-bottom: none;
+        }
+
+        .route-path {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #e74c3c;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #7f8c8d;
+            margin-top: 30px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 FastAPI Monorepo Dashboard</h1>
+            <p>Trung tâm quản lý tất cả microservices</p>
+        </div>
+
+        <div class="status-overview">
+            <div class="status-card gateway">
+                <h3>
+                    <div class="status-indicator status-healthy" id="gateway-status"></div>
+                    API Gateway
+                </h3>
+                <div class="service-info">
+                    <p><strong>Port:</strong> 8080</p>
+                    <p><strong>Role:</strong> Điều phối và định tuyến requests</p>
+                    <p><strong>Features:</strong> Load balancing, CORS, Rate limiting</p>
+                </div>
+                <div class="service-links">
+                    <a href="http://localhost:8080/health" class="service-link health" target="_blank">Health</a>
+                    <a href="http://localhost:8080/metrics" class="service-link" target="_blank">Metrics</a>
+                    <a href="http://localhost:8080/docs" class="service-link docs" target="_blank">API Docs</a>
+                </div>
+            </div>
+
+            <div class="status-card auth">
+                <h3>
+                    <div class="status-indicator status-healthy" id="auth-status"></div>
+                    Auth Service
+                </h3>
+                <div class="service-info">
+                    <p><strong>Port:</strong> 8001</p>
+                    <p><strong>Role:</strong> Xác thực và quản lý người dùng</p>
+                    <p><strong>Features:</strong> JWT, Login, Register, User management</p>
+                </div>
+                <div class="service-links">
+                    <a href="http://localhost:8001/health" class="service-link health" target="_blank">Health</a>
+                    <a href="http://localhost:8001/docs" class="service-link docs" target="_blank">API Docs</a>
+                    <a href="http://localhost:8080/auth/docs" class="service-link" target="_blank">Via Gateway</a>
+                </div>
+            </div>
+
+            <div class="status-card products">
+                <h3>
+                    <div class="status-indicator status-healthy" id="products-status"></div>
+                    Products Service
+                </h3>
+                <div class="service-info">
+                    <p><strong>Port:</strong> 8003</p>
+                    <p><strong>Role:</strong> Quản lý sản phẩm và inventory</p>
+                    <p><strong>Features:</strong> CRUD, Stock management, Categories</p>
+                </div>
+                <div class="service-links">
+                    <a href="http://localhost:8003/health" class="service-link health" target="_blank">Health</a>
+                    <a href="http://localhost:8003/docs" class="service-link docs" target="_blank">API Docs</a>
+                    <a href="http://localhost:8080/products/docs" class="service-link" target="_blank">Via Gateway</a>
+                </div>
+            </div>
+
+            <div class="status-card articles">
+                <h3>
+                    <div class="status-indicator status-healthy" id="articles-status"></div>
+                    Articles Service
+                </h3>
+                <div class="service-info">
+                    <p><strong>Port:</strong> 8002</p>
+                    <p><strong>Role:</strong> Quản lý bài viết và nội dung</p>
+                    <p><strong>Features:</strong> Content management, Publishing, SEO</p>
+                </div>
+                <div class="service-links">
+                    <a href="http://localhost:8002/health" class="service-link health" target="_blank">Health</a>
+                    <a href="http://localhost:8002/docs" class="service-link docs" target="_blank">API Docs</a>
+                    <a href="http://localhost:8080/articles/docs" class="service-link" target="_blank">Via Gateway</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="routes-section">
+            <h2>🔗 Available Routes via API Gateway</h2>
+            <div class="routes-grid">
+                <div class="route-card">
+                    <h4>🔐 Authentication Routes</h4>
+                    <ul class="route-list">
+                        <li><span class="route-path">/auth/*</span> → Auth Service</li>
+                        <li><span class="route-path">/api/v1/auth/*</span> → Auth Service</li>
+                        <li>Endpoints: login, register, profile, users</li>
+                    </ul>
+                </div>
+
+                <div class="route-card">
+                    <h4>📦 Products Routes</h4>
+                    <ul class="route-list">
+                        <li><span class="route-path">/products/*</span> → Products Service</li>
+                        <li><span class="route-path">/api/v1/products/*</span> → Products Service</li>
+                        <li>Endpoints: CRUD, inventory, categories</li>
+                    </ul>
+                </div>
+
+                <div class="route-card">
+                    <h4>📝 Articles Routes</h4>
+                    <ul class="route-list">
+                        <li><span class="route-path">/articles/*</span> → Articles Service</li>
+                        <li><span class="route-path">/api/v1/articles/*</span> → Articles Service</li>
+                        <li>Endpoints: content, publishing, management</li>
+                    </ul>
+                </div>
+
+                <div class="route-card">
+                    <h4>⚙️ Gateway Management</h4>
+                    <ul class="route-list">
+                        <li><span class="route-path">/health</span> → Health check</li>
+                        <li><span class="route-path">/metrics</span> → Performance metrics</li>
+                        <li><span class="route-path">/docs</span> → API documentation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="last-updated">
+            Last updated: <span id="last-updated"></span>
+        </div>
+    </div>
+
+    <button class="refresh-btn" onclick="refreshStatus()" title="Refresh Status">
+        🔄
+    </button>
+
+    <script>
+        async function checkServiceHealth(url) {
+            try {
+                const response = await fetch(url, { method: 'GET', timeout: 5000 });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function refreshStatus() {
+            const services = [
+                { id: 'gateway-status', url: 'http://localhost:8080/health' },
+                { id: 'auth-status', url: 'http://localhost:8001/health' },
+                { id: 'products-status', url: 'http://localhost:8003/health' },
+                { id: 'articles-status', url: 'http://localhost:8002/health' }
+            ];
+
+            for (const service of services) {
+                const indicator = document.getElementById(service.id);
+                const isHealthy = await checkServiceHealth(service.url);
+                
+                indicator.className = 'status-indicator ' + (isHealthy ? 'status-healthy' : 'status-unhealthy');
+            }
+
+            document.getElementById('last-updated').textContent = new Date().toLocaleString();
+        }
+
+        // Auto refresh every 30 seconds
+        setInterval(refreshStatus, 30000);
+        
+        // Initial load
+        document.getElementById('last-updated').textContent = new Date().toLocaleString();
+        refreshStatus();
+    </script>
+</body>
+</html>

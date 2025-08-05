@@ -2,7 +2,7 @@
 Product Routes - API Endpoints
 Định nghĩa các API endpoints cho Product operations
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
 from typing import Optional
 import logging
@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..
 
 from libs.db.session import get_db
 from libs.auth.jwt_utils import get_current_user_id, get_jwt_manager
-from libs.common.base_schema import PaginatedResponse
+from libs.common.base_schema import ListResponse
 from ..models.product import Product
 from ..schemas.product import (
     ProductCreate, 

@@ -2,19 +2,29 @@
 Product Schemas - Pydantic Models
 Định nghĩa các schema cho API request/response validation
 """
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, validator
 from typing import Optional, List
-from datetime import datetime
 from decimal import Decimal
+import sys
+import os
 
-class ProductBase(BaseModel):
+# Add path to monorepo root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+
+from libs.common.base_schema import (
+    BaseSchema, BaseCreate, BaseUpdate, BaseResponse, 
+    SearchParams, ListResponse
+)
+
+
+class ProductBase(BaseSchema):
     """Base schema chứa các trường chung cho Product"""
     name: str = Field(..., min_length=1, max_length=255, description="Tên sản phẩm")
     description: Optional[str] = Field(None, description="Mô tả sản phẩm")
     price: Decimal = Field(..., gt=0, description="Giá sản phẩm (phải > 0)")
     category: str = Field(..., min_length=1, max_length=100, description="Danh mục sản phẩm")
-    is_active: bool = Field(True, description="Trạng thái hoạt động")
     stock_quantity: int = Field(0, ge=0, description="Số lượng tồn kho (>= 0)")
+    is_active: bool = Field(True, description="Trạng thái hoạt động")
 
     @validator('price')
     def validate_price(cls, v):
@@ -37,11 +47,12 @@ class ProductBase(BaseModel):
             raise ValueError('Danh mục không được để trống')
         return v.strip()
 
-class ProductCreate(ProductBase):
+class ProductCreate(ProductBase, BaseCreate):
     """Schema cho tạo sản phẩm mới"""
     pass
 
-class ProductUpdate(BaseModel):
+
+class ProductUpdate(BaseUpdate):
     """Schema cho cập nhật sản phẩm (tất cả fields optional)"""
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
@@ -68,36 +79,25 @@ class ProductUpdate(BaseModel):
             raise ValueError('Danh mục không được để trống')
         return v.strip() if v is not None else v
 
-class ProductResponse(ProductBase):
-    """Schema cho response API (bao gồm các trường từ database)"""
-    id: int
-    created_at: datetime
-    updated_at: datetime
-
+class ProductResponse(ProductBase, BaseResponse):
+    """Schema cho response API (kế thừa BaseResponse để có sẵn id, timestamps, is_active)"""
+    
     class Config:
-        orm_mode = True  # Cho phép convert từ SQLAlchemy model
         json_encoders = {
-            datetime: lambda v: v.isoformat(),
             Decimal: lambda v: float(v)
         }
 
-class ProductListResponse(BaseModel):
-    """Schema cho danh sách sản phẩm với pagination"""
-    items: List[ProductResponse]
-    total: int
-    page: int
-    per_page: int
-    pages: int
 
-class ProductSearchParams(BaseModel):
-    """Schema cho tham số tìm kiếm sản phẩm"""
+class ProductListResponse(ListResponse):
+    """Schema cho danh sách sản phẩm với pagination (kế thừa ListResponse)"""
+    items: List[ProductResponse]
+
+class ProductSearchParams(SearchParams):
+    """Schema cho tham số tìm kiếm sản phẩm (kế thừa SearchParams để có sẵn search, is_active, page, per_page)"""
     name: Optional[str] = Field(None, description="Tìm theo tên sản phẩm")
     category: Optional[str] = Field(None, description="Lọc theo danh mục")
-    is_active: Optional[bool] = Field(None, description="Lọc theo trạng thái")
     min_price: Optional[Decimal] = Field(None, ge=0, description="Giá tối thiểu")
     max_price: Optional[Decimal] = Field(None, ge=0, description="Giá tối đa")
-    page: int = Field(1, ge=1, description="Số trang")
-    per_page: int = Field(10, ge=1, le=100, description="Số items per page")
 
     @validator('max_price')
     def validate_price_range(cls, v, values):

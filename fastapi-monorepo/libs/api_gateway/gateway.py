@@ -27,6 +27,7 @@ from .middleware import (
 )
 from .health_checker import HealthChecker
 from .metrics import GatewayMetrics
+from .openapi_aggregator import OpenAPIAggregator
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ class APIGateway:
         self.sticky_session_manager = StickySessionManager()
         self.health_checker = HealthChecker(config.load_balancer)
         self.metrics = GatewayMetrics(config.metrics)
+        self.openapi_aggregator = OpenAPIAggregator()
         
         # HTTP client for upstream requests
         self.http_client: Optional[httpx.AsyncClient] = None
@@ -69,9 +71,16 @@ class APIGateway:
         """Setup middleware stack"""
         
         # CORS middleware (first)
-        cors_middleware = CORSMiddleware(self.config.cors).create_middleware()
-        if cors_middleware:
-            self.app.add_middleware(cors_middleware.__class__, **cors_middleware.__dict__)
+        if self.config.cors.enabled:
+            from starlette.middleware.cors import CORSMiddleware as StarletteCORSMiddleware
+            self.app.add_middleware(
+                StarletteCORSMiddleware,
+                allow_origins=self.config.cors.allow_origins,
+                allow_credentials=self.config.cors.allow_credentials,
+                allow_methods=self.config.cors.allow_methods,
+                allow_headers=self.config.cors.allow_headers,
+                max_age=self.config.cors.max_age
+            )
         
         # Tracing middleware
         if self.config.tracing.enabled:
@@ -111,6 +120,34 @@ class APIGateway:
             async def metrics():
                 """Gateway metrics"""
                 return await self.metrics.get_metrics()
+        
+        # Dashboard endpoint
+        @self.app.get("/dashboard")
+        async def dashboard():
+            """Service Dashboard"""
+            import os
+            from fastapi.responses import FileResponse
+            dashboard_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "dashboard.html")
+            return FileResponse(dashboard_path)
+        
+        # Root redirect to dashboard
+        @self.app.get("/")
+        async def root():
+            """Redirect root to dashboard"""
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url="/dashboard")
+            
+        # Unified OpenAPI endpoint
+        @self.app.get("/openapi.json")
+        async def unified_openapi():
+            """Unified OpenAPI specification from all services"""
+            services = {
+                "gateway": f"http://{self.config.host}:{self.config.port}",
+                "auth-service": "http://localhost:8001",
+                "products-service": "http://localhost:8003", 
+                "articles-service": "http://localhost:8002"
+            }
+            return await self.openapi_aggregator.get_unified_openapi_spec(services)
         
         # Catch-all route for proxying
         @self.app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
@@ -343,6 +380,9 @@ class APIGateway:
         # Initialize HTTP client
         self.http_client = httpx.AsyncClient()
         
+        # Start OpenAPI aggregator
+        await self.openapi_aggregator.start()
+        
         # Start health checks
         if self.config.load_balancer.health_check_enabled:
             await self._start_health_checks()
@@ -359,6 +399,9 @@ class APIGateway:
         # Close HTTP client
         if self.http_client:
             await self.http_client.aclose()
+        
+        # Stop OpenAPI aggregator
+        await self.openapi_aggregator.stop()
         
         # Stop metrics collection
         if self.config.metrics.enabled:

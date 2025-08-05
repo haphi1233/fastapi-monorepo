@@ -1,7 +1,11 @@
 import os
 import sys
 from fastapi import FastAPI
-from .app.routers import articles
+
+# Add path to monorepo root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from app.routers import articles
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 

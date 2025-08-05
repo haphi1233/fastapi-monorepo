@@ -4,7 +4,7 @@ Chứa các business logic và operations cho Product
 """
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from fastapi import HTTPException, status
 import logging
 import sys
@@ -13,20 +13,22 @@ import os
 # Add path to monorepo root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 
+from libs.common.base_service import BaseService
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductUpdate, ProductSearchParams
 
 logger = logging.getLogger(__name__)
 
-class ProductService:
-    """Service class chứa business logic cho Product operations"""
+
+class ProductService(BaseService[Product, ProductCreate, ProductUpdate]):
+    """Service class chứa business logic cho Product operations (kế thừa BaseService)"""
     
     def __init__(self, db: Session):
-        self.db = db
+        super().__init__(Product, db)
     
     def create_product(self, product_data: ProductCreate) -> Product:
         """
-        Tạo sản phẩm mới
+        Tạo sản phẩm mới với validation đặc thù
         
         Args:
             product_data: Dữ liệu sản phẩm từ ProductCreate schema
@@ -49,28 +51,12 @@ class ProductService:
                 detail=f"Sản phẩm với tên '{product_data.name}' đã tồn tại"
             )
         
-        # Tạo sản phẩm mới
-        db_product = Product(**product_data.dict())
-        
-        try:
-            self.db.add(db_product)
-            self.db.commit()
-            self.db.refresh(db_product)
-            
-            logger.info(f"Created new product: {db_product.id} - {db_product.name}")
-            return db_product
-            
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error creating product: {str(e)}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Lỗi khi tạo sản phẩm"
-            )
+        # Sử dụng BaseService.create() method
+        return self.create(product_data)
     
     def get_product(self, product_id: int) -> Product:
         """
-        Lấy sản phẩm theo ID
+        Lấy sản phẩm theo ID (sử dụng BaseService method)
         
         Args:
             product_id: ID của sản phẩm
@@ -81,20 +67,11 @@ class ProductService:
         Raises:
             HTTPException: Nếu không tìm thấy sản phẩm
         """
-        product = self.db.query(Product).filter(Product.id == product_id).first()
-        
-        if not product:
-            logger.warning(f"Product not found: {product_id}")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Không tìm thấy sản phẩm với ID {product_id}"
-            )
-        
-        return product
+        return self.get_by_id_or_404(product_id)
     
-    def get_products(self, search_params: ProductSearchParams) -> tuple[List[Product], int]:
+    def get_products(self, search_params: ProductSearchParams) -> Tuple[List[Product], int]:
         """
-        Lấy danh sách sản phẩm với tìm kiếm và phân trang
+        Lấy danh sách sản phẩm với tìm kiếm và phân trang (sử dụng BaseService)
         
         Args:
             search_params: Tham số tìm kiếm và phân trang
@@ -102,9 +79,38 @@ class ProductService:
         Returns:
             tuple: (danh sách sản phẩm, tổng số sản phẩm)
         """
-        query = self.db.query(Product)
+        return self.get_list(search_params)
+    
+    def _apply_search_filter(self, query, search_term: str):
+        """
+        Override BaseService method để implement search logic cụ thể cho Product
         
-        # Apply filters
+        Args:
+            query: SQLAlchemy query object
+            search_term: Từ khóa tìm kiếm
+            
+        Returns:
+            query: Query đã apply search filter
+        """
+        return query.filter(
+            or_(
+                Product.name.ilike(f"%{search_term}%"),
+                Product.description.ilike(f"%{search_term}%"),
+                Product.category.ilike(f"%{search_term}%")
+            )
+        )
+    
+    def _apply_custom_filters(self, query, search_params: ProductSearchParams):
+        """
+        Apply các filter đặc thù cho Product
+        
+        Args:
+            query: SQLAlchemy query object
+            search_params: Tham số tìm kiếm
+            
+        Returns:
+            query: Query đã apply filters
+        """
         filters = []
         
         if search_params.name:
@@ -112,9 +118,6 @@ class ProductService:
         
         if search_params.category:
             filters.append(Product.category.ilike(f"%{search_params.category}%"))
-        
-        if search_params.is_active is not None:
-            filters.append(Product.is_active == search_params.is_active)
         
         if search_params.min_price is not None:
             filters.append(Product.price >= search_params.min_price)
@@ -125,19 +128,11 @@ class ProductService:
         if filters:
             query = query.filter(and_(*filters))
         
-        # Get total count
-        total = query.count()
-        
-        # Apply pagination
-        offset = (search_params.page - 1) * search_params.per_page
-        products = query.offset(offset).limit(search_params.per_page).all()
-        
-        logger.info(f"Retrieved {len(products)} products (total: {total})")
-        return products, total
+        return query
     
     def update_product(self, product_id: int, product_data: ProductUpdate) -> Product:
         """
-        Cập nhật sản phẩm
+        Cập nhật sản phẩm với validation đặc thù
         
         Args:
             product_id: ID của sản phẩm
@@ -260,3 +255,17 @@ class ProductService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Lỗi khi cập nhật tồn kho"
             )
+
+
+# Dependency function for FastAPI
+def get_product_service(db: Session) -> ProductService:
+    """
+    Dependency function để inject ProductService vào FastAPI endpoints
+    
+    Args:
+        db: Database session (sẽ được inject bởi FastAPI Depends)
+        
+    Returns:
+        ProductService: Instance của ProductService
+    """
+    return ProductService(db)

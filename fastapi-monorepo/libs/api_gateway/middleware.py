@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import hashlib
 
 from fastapi import Request, Response, HTTPException
-from fastapi.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware as StarletteCORSMiddleware
 from starlette.responses import JSONResponse
 
