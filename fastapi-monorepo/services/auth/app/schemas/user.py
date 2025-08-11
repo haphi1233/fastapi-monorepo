@@ -5,8 +5,6 @@ User Schemas - Authentication Service
 from pydantic import BaseModel, Field, validator, EmailStr
 from typing import Optional
 from datetime import datetime
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 
 from libs.common.base_schema import BaseSchema, BaseResponse, BaseCreate, BaseUpdate, SearchParams
 

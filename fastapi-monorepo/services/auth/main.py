@@ -8,13 +8,9 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Add path to monorepo root
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-
 # Import common libraries
 from libs.common.app_factory import create_app, setup_logging
-from app.routers import auth
+from .app.routers import auth
 
 # Setup logging
 setup_logging("auth-service")

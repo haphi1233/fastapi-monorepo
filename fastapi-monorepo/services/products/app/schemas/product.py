@@ -5,12 +5,6 @@ Product Schemas - Pydantic Models
 from pydantic import Field, validator
 from typing import Optional, List
 from decimal import Decimal
-import sys
-import os
-
-# Add path to monorepo root
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
-
 from libs.common.base_schema import (
     BaseSchema, BaseCreate, BaseUpdate, BaseResponse, 
     SearchParams, ListResponse

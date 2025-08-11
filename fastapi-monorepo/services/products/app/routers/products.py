@@ -7,12 +7,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import logging
 import math
-import sys
-import os
 import uuid
-
-# Add path to monorepo root
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 
 from libs.db.session import get_db
 from libs.auth.jwt_utils import get_current_user_id, get_jwt_manager

@@ -141,12 +141,13 @@ class APIGateway:
         @self.app.get("/openapi.json")
         async def unified_openapi():
             """Unified OpenAPI specification from all services"""
-            services = {
-                "gateway": f"http://{self.config.host}:{self.config.port}",
-                "auth-service": "http://localhost:8001",
-                "products-service": "http://localhost:8003", 
-                "articles-service": "http://localhost:8002"
-            }
+            # Build services map dynamically from configured routes
+            services: Dict[str, str] = {}
+            for route in self.config.routes:
+                # Use the first upstream instance as the base URL for spec fetch
+                if route.service_name not in services and route.upstream_instances:
+                    instance = route.upstream_instances[0]
+                    services[route.service_name] = instance.url
             return await self.openapi_aggregator.get_unified_openapi_spec(services)
         
         # Catch-all route for proxying

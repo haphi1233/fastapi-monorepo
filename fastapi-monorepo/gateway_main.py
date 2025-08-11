@@ -5,16 +5,11 @@ API Gateway Startup Script
 
 Khởi động API Gateway để tổng hợp tất cả các microservices
 """
-import os
-import sys
 import asyncio
 import uvicorn
 from typing import Dict, Any
 
-# Add libs to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libs'))
-
-from api_gateway.config import (
+from libs.api_gateway.config import (
     GatewayConfig, 
     RouteConfig, 
     ServiceInstance,
@@ -25,7 +20,7 @@ from api_gateway.config import (
     AuthConfig,
     MetricsConfig
 )
-from api_gateway.gateway import APIGateway
+from libs.api_gateway.gateway import APIGateway
 
 def create_gateway_config() -> GatewayConfig:
     """Tạo cấu hình API Gateway"""
@@ -191,11 +186,11 @@ async def main():
     print(f"📊 Health Check: http://{config.host}:{config.port}/health")
     print(f"📈 Metrics: http://{config.host}:{config.port}/metrics")
     print("\n🔗 Available Service Routes:")
-    print("   • Auth Service: http://localhost:8000/auth/* or /api/v1/auth/*")
-    print("   • Articles Service: http://localhost:8000/articles/* or /api/v1/articles/*") 
-    print("   • Products Service: http://localhost:8000/products/* or /api/v1/products/*")
+    print("   • Auth Service: http://localhost:8001/auth/* or /api/v1/auth/*")
+    print("   • Articles Service: http://localhost:8002/articles/* or /api/v1/articles/*") 
+    print("   • Products Service: http://localhost:8003/products/* or /api/v1/products/*")
     print("\n📚 API Documentation:")
-    print("   • Gateway Docs: http://localhost:8000/docs")
+    print(f"   • Gateway Docs: http://{config.host}:{config.port}/docs")
     print("   • Auth Docs: http://localhost:8001/docs")
     print("   • Articles Docs: http://localhost:8002/docs")
     print("   • Products Docs: http://localhost:8003/docs")

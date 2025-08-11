@@ -5,13 +5,13 @@ from sqlalchemy import pool
 
 import sys
 import os
-# Thêm đường dẫn tới thư mục gốc của monorepo
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+# Thêm đường dẫn tới thư mục gốc của monorepo (fastapi-monorepo/fastapi-monorepo)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')))
 
 from alembic import context
 from libs.db.base import Base
 # Import models để Alembic có thể phát hiện chúng
-from app.models.articles import Article
+from services.articles.app.models.articles import Article
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

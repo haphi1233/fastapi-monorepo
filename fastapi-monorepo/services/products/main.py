@@ -14,13 +14,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Add path to monorepo root
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+# Path manipulation removed; rely on package imports
 
 # Import routers
-from app.routers import products
+from .app.routers import products
 
 # Import database
 from libs.db.session import db_manager

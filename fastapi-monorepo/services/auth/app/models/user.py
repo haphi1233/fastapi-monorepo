@@ -4,8 +4,6 @@ User Model - Authentication Service
 """
 from sqlalchemy import Column, String, Boolean, DateTime, Text
 from sqlalchemy.sql import func
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 
 from libs.common.base_model import BaseModel
 

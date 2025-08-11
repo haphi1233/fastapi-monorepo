@@ -8,13 +8,11 @@ from fastapi import HTTPException, status
 from typing import Optional, Dict, Any
 import logging
 from datetime import datetime, timedelta
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 
 from libs.common.base_service import BaseService
 from libs.auth.jwt_utils import JWTManager, PasswordManager, get_jwt_manager
-from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate, UserSearchParams, LoginRequest, TokenResponse, PasswordChange
+from ..models.user import User
+from ..schemas.user import UserCreate, UserUpdate, UserSearchParams, LoginRequest, TokenResponse, PasswordChange
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +149,7 @@ class AuthService(BaseService[User, UserCreate, UserUpdate]):
         refresh_token = self.jwt_manager.create_refresh_token({"sub": str(user.id)})
         
         # Convert user to response schema
-        from app.schemas.user import UserResponse
+        from ..schemas.user import UserResponse
         user_response = UserResponse.model_validate(user)
         
         return TokenResponse(

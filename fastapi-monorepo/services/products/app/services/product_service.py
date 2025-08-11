@@ -7,15 +7,10 @@ from sqlalchemy import and_, or_
 from typing import Optional, List, Tuple
 from fastapi import HTTPException, status
 import logging
-import sys
-import os
-
-# Add path to monorepo root
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 
 from libs.common.base_service import BaseService
-from app.models.product import Product
-from app.schemas.product import ProductCreate, ProductUpdate, ProductSearchParams
+from ..models.product import Product
+from ..schemas.product import ProductCreate, ProductUpdate, ProductSearchParams
 
 logger = logging.getLogger(__name__)
 

@@ -2,12 +2,6 @@
 Định nghĩa cấu trúc bảng products trong database
 """
 from sqlalchemy import Column, String, Text, Numeric, Integer
-import sys
-import os
-
-# Add path to monorepo root
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
-
 from libs.common.base_model import BaseModel
 
 

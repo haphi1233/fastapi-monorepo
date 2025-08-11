@@ -2,10 +2,6 @@
 Event-driven integration for Product Service
 """
 
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
-
 from typing import Optional, Dict, Any
 import logging
 
